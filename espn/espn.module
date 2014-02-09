@@ -1,0 +1,159 @@
+<?php
+
+/**
+ * Implements hook_menu(). 
+ */
+function espn_menu() {
+  $items['admin/config/services/espn'] = array(
+    'title' => 'ESPN API settings',
+    'description' => 'Configure access to the ESPN API.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('espn_admin_form'),
+    'access arguments' => array('administer espn'),
+    'file' => 'espn.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function espn_permission() {
+  return array(
+    'administer espn' => array(
+      'title' => t('Administer ESPN API settings'),
+    ),
+  );
+}
+
+
+
+/**
+ * Implements hook_block_info().
+ */
+function espn_block_info() {
+
+  $blocks['espn']['info'] = t('ESPN INfo');
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function espn_block_view($delta='') {
+  $result = array();
+ // Get cURL resource
+  $curl = curl_init();
+  $key = variable_get('espn_apikey', 'qa9c5jfpvt8btcfyjbtv9gd2');
+  $news_type = 'headlines';
+  $request_api = 'http://api.espn.com/v1/sports/baseball/news/' . $news_type;
+  $curl_url = $request_api .'?apikey='. $key ;
+  // Set some options - we are passing in a useragent too here
+  curl_setopt_array($curl, array(
+      CURLOPT_RETURNTRANSFER => 1,
+      CURLOPT_URL => $curl_url,
+      CURLOPT_USERAGENT => 'Codular Sample cURL Request'
+  ));
+  // Send the request & save response to $resp
+  $resp = curl_exec($curl);
+
+  $result['headlines'] = json_decode($resp, true);
+
+
+  $news_type = 'news';
+  $request_api = 'http://api.espn.com/v1/sports/baseball/' . $news_type;
+  $curl_url = $request_api .'?apikey='. $key ;
+  // Set some options - we are passing in a useragent too here
+  curl_setopt_array($curl, array(
+      CURLOPT_RETURNTRANSFER => 1,
+      CURLOPT_URL => $curl_url,
+      CURLOPT_USERAGENT => 'Codular Sample cURL Request'
+  ));
+  $result['news'] = json_decode($resp, true);
+  
+
+  $block['content'] = espn_custom_render($result);
+ 
+ curl_close($curl);
+  return $block;
+}
+
+
+//Test code for API check
+function espn_custom_render($result){
+  
+
+  $headlines_array = array();
+  $headlines_array = $result['headlines']['headlines'];
+  
+  $headlines_str ='';
+  foreach($headlines_array as $key=>$value){
+    $headlines_txt = $headlines_array[$key]['headline'];
+    $headlines_url = $headlines_array[$key]['links']['web']['href'];
+    $headlines_str .=<<<STR
+    <li> <a href="$headlines_url" title="$headlines_txt" alt="$headlines_txt" target="_blank">$headlines_txt </a></li>  
+STR;
+  }
+  
+
+  $news_array = array();
+  $news_array = $result['news']['headlines'];
+  
+  $news_str ='';
+  //echo "<pre>";
+  //print_r($news_array);
+  foreach($news_array as $key=>$value){
+    $news_txt = $news_array[$key]['headline'];
+    $news_url = $news_array[$key]['links']['web']['href'];
+    $news_str .=<<<STR
+    <li> <a href="$news_url" title="$news_txt" alt="$news_txt" target="_blank">$news_txt </a></li>  
+STR;
+  }
+  
+  
+
+  $render_data =<<<STR
+  <style>
+  .espn_news{
+    background: #ffffff;
+  }
+  .espn_headline_title, .espn_events_title{
+    background: none repeat scroll 0 0 rgba(0, 0, 0, 0);
+    border-bottom: 0 none;
+    color: #F26531;
+    font-family: 'PT Sans',sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    margin: 0;
+    padding: 0 0 15px;
+    text-indent: 0;
+    text-transform: uppercase;
+    margin: 0px;
+    padding: 15px 10px;
+   }
+   .espn_headline_list a, .espn_events_list a{
+    cursor:pointer;
+   }
+   
+  </style>
+  <div class="espn_news">
+    <div class="Headline">
+      <span class="espn_headline_title">Sport Baseball Headline </span>
+      <ul class="espn_headline_list">
+        $headlines_str    
+     </ul>
+     <!--
+      <span class="espn_events_title">Sport Baseball News </span>
+      <ul class="espn_events_list">
+        $news_str    
+     </ul>
+     -->
+    </div>
+  </div>
+  
+STR;
+  return $render_data;
+}
+

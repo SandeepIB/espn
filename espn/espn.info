@@ -1,0 +1,5 @@
+; $Id: espn.info,v 1.2.4.1 2014/02/09 02:43:00 chill35 Exp $
+name = espn 
+package = espn
+description = Module for espn
+core = 7.x

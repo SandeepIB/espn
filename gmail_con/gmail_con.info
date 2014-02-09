@@ -1,0 +1,11 @@
+name = Google Connect
+description = Allows users to see an unread message count on their homepage
+core = 7.x
+
+
+; Information added by drupal.org packaging script on 2013-09-30
+version = "7.x-0.x-dev"
+core = "7.x"
+project = "gmail_con"
+datestamp = "1380581041"
+

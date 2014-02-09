@@ -1,0 +1,129 @@
+<?php
+//print("hii");exit;
+function gmail_con_menu(){
+
+
+    $items['abc/def'] = array(
+     /* 'page callback' => 'mymodule_abc_view',
+      'page arguments' => array(1, 'foo'),
+      'access callback' => TRUE,*/
+      'type' => MENU_CALLBACK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('add_component_form'),
+    'access callback' => TRUE,
+     'access arguments' => array('access content')
+      //'page callback' => 'drupal_get_form',
+    //	'page arguments' => array('googadd_component_formle_form'),
+    );
+
+    $items['myform/data_entry_form'] = array(
+	  'type' => MENU_CALLBACK,
+	  'access arguments' => array('access content'),
+	  'page callback' => 'drupal_get_form',
+	  'page arguments' => array('add_component_form') 
+	);
+
+	 $items['myform/inbox'] = array(
+	  'type' => MENU_CALLBACK,
+	  'access arguments' => array('access content'),
+	  'page callback' => 'inbox',
+//	  //'page arguments' => array('') 
+	);
+
+    return $items;
+  }
+
+function inbox(){
+
+return "dfhjgfd";
+}
+function add_component_form($form,  &$form_state){
+
+	$form['tab1']['field1'] = array(
+    '#title' => t('User'),
+    '#type' => 'textfield',
+  );
+	$form['tab1']['field2'] = array(
+    '#title' => t('Password'),
+    '#type' => 'password',
+  );
+
+	$form['actions']['delete'] = array(
+
+    '#type' => 'submit',
+
+    '#value' => t('Login'),
+
+    '#weight' => 15,
+
+    '#submit' => array('google_submit'),
+
+   );
+
+//return "tests";
+	return $form;
+}
+
+function google_submit($form,  &$form_state){
+
+	///print_r($form_state);
+	$username = $form_state['input']['field1'];
+	$password = $form_state['input']['field2'];
+	//exit;
+
+	$css = 'div.toggler				{ border:1px solid #ccc; background:url(gmail2.jpg) 10px 12px #eee no-repeat; cursor:pointer; padding:10px 32px; }
+div.toggler .subject	{ font-weight:bold; }
+div.read					{ color:#666; }
+div.toggler .from, div.toggler .date { font-style:italic; font-size:11px; }
+div.body					{ padding:10px 20px; }';
+
+drupal_add_css($css);
+	//drupal_goto('myform/inbox');
+
+/* connect to gmail */
+$hostname = '{imap.gmail.com:993/imap/ssl}INBOX';
+ 	
+
+/* try to connect */
+$inbox = imap_open($hostname,$username,$password) or die('Cannot connect to Gmail: ' . imap_last_error());
+
+/* grab emails */
+$emails = imap_search($inbox,'ALL');
+
+/* if emails are returned, cycle through each... */
+if($emails) {
+	
+	/* begin output var */
+	$output = '';
+	
+	/* put the newest emails on top */
+	rsort($emails);
+	
+	/* for every email... */
+	foreach($emails as $email_number) {
+		
+		/* get information specific to this email */
+		$overview = imap_fetch_overview($inbox,$email_number,0);
+		$message = imap_fetchbody($inbox,$email_number,2);
+		
+		/* output the email header information */
+		$output.= '<tr class="toggler '.($overview[0]->seen ? 'read' : 'unread').'">';
+		$output.= '<td class="subject">'.$overview[0]->subject.'</td> ';
+		$output.= '<td class="from">'.$overview[0]->from.'</td>';
+		$output.= '<td class="date">on '.$overview[0]->date.'</td>';
+		
+		
+		/* output the email body */
+		$output.= '<td class="body">'.substr($message,0,200).'</td>';
+		$output.= '</tr>';
+	}
+	
+	echo '<table>'.$output.'</table>';
+} 
+
+/* close the connection */
+imap_close($inbox);
+
+	exit;
+}
+?>
